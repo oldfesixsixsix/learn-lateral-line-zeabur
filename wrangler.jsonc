@@ -1,0 +1,36 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "learn-lateral-line-zeabur",
+  "main": "worker.js",
+  "compatibility_date": "2026-10-19",
+  "observability": { "enabled": true },
+  "assets": {
+    "directory": "./web",
+    "binding": "ASSETS",
+    "run_worker_first": true
+  },
+  "vars": {
+    "BASE_PATH": ""
+  },
+
+  "env": {
+    // ───────── 正式環境：unclereal.com/library/lateral-line（見 docs/adr/0001、0002） ─────────
+    "production": {
+      "name": "learn-lateral-line-zeabur",
+      "routes": [
+        { "pattern": "unclereal.com/library/lateral-line*", "zone_name": "unclereal.com" }
+      ],
+      // 跟 library 共用同一個 D1 資料庫（book/loan 表），見 library docs/adr/0003
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "library",
+          "database_id": "e062b0e9-2110-4951-8f42-d58d823eba29"
+        }
+      ],
+      "vars": {
+        "BASE_PATH": "/library/lateral-line"
+      }
+    }
+  }
+}

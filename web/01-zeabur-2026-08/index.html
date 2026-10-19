@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lateral Line 01：Zeabur｜一把鑰匙走了多遠</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F2F4F6; --surface:#FFFFFF; --ink:#18212E; --muted:#5B6676;
+  --line:#D23B27; --line-soft:#F8DDD8; --gate:#2B63D9; --gate-soft:#DCE6FB;
+  --safe:#15855A; --safe-soft:#D8F0E5; --rule:#D3D9E0; --idle:#B6BFCB;
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#0F151D; --surface:#17202B; --ink:#E7ECF2; --muted:#9AA6B5;
+    --line:#FF6B54; --line-soft:#3A1F1C; --gate:#729DFF; --gate-soft:#1C2A47;
+    --safe:#43C98F; --safe-soft:#15332A; --rule:#2A3543; --idle:#4A5562;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0F151D; --surface:#17202B; --ink:#E7ECF2; --muted:#9AA6B5;
+  --line:#FF6B54; --line-soft:#3A1F1C; --gate:#729DFF; --gate-soft:#1C2A47;
+  --safe:#43C98F; --safe-soft:#15332A; --rule:#2A3543; --idle:#4A5562;
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{
+  margin:0;min-height:100%;background:var(--paper);color:var(--ink);
+  font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  font-size:17px;line-height:1.75;-webkit-font-smoothing:antialiased;
+}
+a{color:var(--gate)}
+button{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--gate);outline-offset:3px;border-radius:4px}
+
+.app{display:grid;grid-template-columns:300px minmax(0,1fr);min-height:100vh;min-height:100dvh}
+
+/* ---------- route rail ---------- */
+.rail{
+  position:sticky;top:0;align-self:start;height:100vh;height:100dvh;overflow-y:auto;
+  padding:32px 20px 32px 28px;border-right:1px solid var(--rule);background:var(--surface);
+}
+.rail h2{font-size:15px;font-weight:700;margin:0 0 4px;color:var(--muted)}
+.rail .legend{font-size:13px;color:var(--muted);margin:0 0 22px;line-height:1.6}
+.legend i{display:inline-block;width:18px;height:4px;border-radius:2px;vertical-align:middle;margin-right:4px}
+.route{list-style:none;margin:0;padding:0}
+.route li{position:relative;padding-left:34px}
+.route li::before{ /* track segment leading into this item */
+  content:"";position:absolute;left:9px;top:-2px;bottom:50%;width:6px;border-radius:3px;
+  background:var(--idle);transition:background .35s;
+}
+.route li:first-child::before{display:none}
+.route li.on::before{background:var(--line)}
+.route li.st{min-height:46px;display:flex;align-items:center}
+.route li.st::after{ /* lower half of track */
+  content:"";position:absolute;left:9px;top:50%;bottom:-2px;width:6px;border-radius:3px;background:var(--idle);transition:background .35s;
+}
+.route li.st:last-child::after{display:none}
+.route li.st.through::after{background:var(--line)}
+.dot{
+  position:absolute;left:2px;top:50%;width:20px;height:20px;margin-top:-10px;border-radius:50%;
+  background:var(--surface);border:4px solid var(--idle);z-index:1;transition:border-color .35s,background .35s;
+}
+.st.on .dot,.st.start .dot{border-color:var(--line)}
+.st.here .dot{background:var(--line)}
+.st.cut .dot{border-color:var(--safe);background:var(--safe)}
+.st.cut .dot::before,.st.cut .dot::after{
+  content:"";position:absolute;left:50%;top:50%;width:10px;height:2px;background:var(--surface);
+  transform:translate(-50%,-50%) rotate(45deg);
+}
+.st.cut .dot::after{transform:translate(-50%,-50%) rotate(-45deg)}
+.st .nm{font-size:15px;font-weight:500;color:var(--muted);line-height:1.35}
+.st.on .nm,.st.start .nm{color:var(--ink)}
+.st.here .nm{font-weight:900}
+.st.cut .nm{color:var(--safe);font-weight:700}
+.route li.gate{min-height:34px;display:flex;align-items:center}
+.route li.gate::after{
+  content:"";position:absolute;left:9px;top:50%;bottom:-2px;width:6px;border-radius:3px;background:var(--idle);transition:background .35s;
+}
+.route li.gate.on::after{background:var(--line)}
+.gate .bar{
+  position:absolute;left:-4px;top:50%;width:32px;height:6px;margin-top:-3px;border-radius:3px;background:var(--gate);z-index:1;
+}
+.gate .nm{font-size:12.5px;color:var(--gate);font-weight:700;letter-spacing:.02em}
+
+/* ---------- main ---------- */
+main{display:flex;flex-direction:column;min-width:0}
+.screen{flex:1;padding:56px clamp(20px,6vw,72px) 32px;max-width:820px;width:100%}
+.screen:focus{outline:none}
+.kicker{font-size:14px;color:var(--muted);margin:0 0 6px}
+h1{font-size:clamp(40px,7vw,76px);line-height:1.08;font-weight:900;letter-spacing:-.02em;margin:0 0 20px}
+h2.t{font-size:clamp(28px,4.2vw,40px);line-height:1.25;font-weight:900;margin:0 0 14px;letter-spacing:-.01em}
+h3{font-size:16px;font-weight:700;margin:30px 0 6px}
+p{margin:0 0 14px;max-width:36em}
+.lead{font-size:19px;max-width:32em}
+.muted{color:var(--muted)}
+.time{display:inline-block;font-size:14px;color:var(--line);background:var(--line-soft);padding:2px 10px;border-radius:6px;margin:0 0 18px}
+.analogy{border-left:4px solid var(--gate);padding:4px 0 4px 16px;margin:20px 0;color:var(--muted);max-width:34em}
+.note{background:var(--gate-soft);padding:12px 16px;border-radius:8px;margin:18px 0;max-width:36em;font-size:16px}
+.pocket{margin:26px 0 4px;padding:14px 16px;border:1px dashed var(--line);border-radius:10px;max-width:36em}
+.pocket b{display:block;font-size:14px;color:var(--line);margin-bottom:6px}
+.pocket ol{margin:0;padding-left:1.4em;font-size:15.5px}
+.pocket li{color:var(--muted)}
+.pocket li.new{color:var(--ink);font-weight:700}
+.def{list-style:none;padding:0;margin:6px 0 0;max-width:36em}
+.def li{position:relative;padding:8px 0 8px 64px;border-top:1px solid var(--rule)}
+.def li:first-child{border-top:none}
+.who{position:absolute;left:0;top:10px;font-size:13px;font-weight:700;padding:1px 8px;border-radius:5px;background:var(--safe-soft);color:var(--safe)}
+.who.u{background:var(--gate-soft);color:var(--gate)}
+
+/* game */
+.checks{list-style:none;padding:0;margin:18px 0;max-width:38em}
+.checks li{border-top:1px solid var(--rule)}
+.checks label{display:flex;gap:14px;align-items:flex-start;padding:12px 4px;cursor:pointer}
+.checks input{width:22px;height:22px;margin-top:4px;accent-color:var(--safe);flex:none}
+.checks small{display:block;color:var(--muted);font-size:14px;line-height:1.5}
+.result{border-radius:10px;padding:16px 18px;margin:8px 0 0;max-width:38em;background:var(--line-soft)}
+.result.ok{background:var(--safe-soft)}
+.result strong{display:block;font-size:18px;margin-bottom:4px}
+.result p{margin:6px 0 0;font-size:16px}
+
+/* layers */
+.layers{list-style:none;padding:0;margin:20px 0;max-width:40em}
+.layers>li{display:grid;grid-template-columns:7.5em 1fr;gap:16px;padding:16px 0;border-top:1px solid var(--rule)}
+.layers h4{margin:0;font-size:17px;font-weight:900;line-height:1.4}
+.layers h4 span{display:block;font-size:13px;font-weight:500;color:var(--muted)}
+.layers ul{margin:0;padding-left:1.1em;font-size:16px}
+.layers li li{margin-bottom:4px}
+
+/* quiz */
+.q{margin:26px 0;max-width:38em}
+.q h3{font-size:18px;margin:0 0 10px}
+.opts{display:grid;gap:8px}
+.opt{
+  text-align:left;padding:12px 16px;border-radius:10px;border:2px solid var(--rule);background:var(--surface);cursor:pointer;line-height:1.5;
+}
+.opt:hover:not(:disabled){border-color:var(--gate)}
+.opt:disabled{cursor:default}
+.opt.right{border-color:var(--safe);background:var(--safe-soft)}
+.opt.wrong{border-color:var(--line);background:var(--line-soft)}
+.explain{font-size:15.5px;color:var(--muted);margin:10px 0 0}
+.score{font-size:20px;font-weight:900;margin:10px 0}
+
+/* end */
+.takeaways{counter-reset:t;list-style:none;padding:0;margin:20px 0;max-width:38em}
+.takeaways li{position:relative;padding:10px 0 10px 44px;border-top:1px solid var(--rule)}
+.takeaways li::before{counter-increment:t;content:counter(t);position:absolute;left:0;top:10px;width:28px;height:28px;border-radius:50%;background:var(--line);color:#fff;font-weight:900;font-size:15px;display:grid;place-items:center}
+.src{font-size:15px;padding-left:1.2em}
+
+/* nav */
+.controls{
+  position:sticky;bottom:0;display:flex;align-items:center;gap:14px;
+  padding:14px clamp(20px,6vw,72px) calc(14px + env(safe-area-inset-bottom,0px));
+  background:var(--paper);border-top:1px solid var(--rule);
+}
+.btn{
+  min-height:52px;padding:0 26px;border-radius:12px;border:2px solid var(--ink);background:transparent;font-weight:700;font-size:17px;cursor:pointer;
+}
+.btn.primary{background:var(--ink);color:var(--paper)}
+.btn:disabled{opacity:.3;cursor:default}
+.dots{flex:1;display:flex;justify-content:center;gap:7px;flex-wrap:wrap}
+.dots span{width:9px;height:9px;border-radius:50%;background:var(--idle)}
+.dots span.done{background:var(--line)}
+.dots span.now{background:var(--ink);transform:scale(1.35)}
+.inline-btn{margin-top:18px}
+
+@media (max-width:860px){
+  .app{grid-template-columns:1fr}
+  .rail{position:sticky;top:0;z-index:5;height:auto;border-right:none;border-bottom:1px solid var(--rule);padding:12px 16px 10px;overflow-x:auto;overflow-y:hidden}
+  .rail h2,.rail .legend{display:none}
+  .route{display:flex;align-items:flex-start;width:max-content;padding-right:16px}
+  .route li{padding-left:0;padding-top:30px;min-height:0!important;display:block!important;width:78px;text-align:center}
+  .route li.gate{width:46px}
+  .route li::before{left:-2px;right:50%;top:12px;bottom:auto;width:auto;height:6px}
+  .route li.st::after,.route li.gate::after{left:50%;right:-2px;top:12px;bottom:auto;width:auto;height:6px}
+  .dot{left:50%;top:5px;margin:0 0 0 -10px}
+  .gate .bar{left:50%;top:0;width:6px;height:30px;margin:0 0 0 -3px}
+  .st .nm{font-size:11.5px;display:block;padding:0 2px}
+  .gate .nm{font-size:10.5px;display:block;line-height:1.25}
+  body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+  .screen{padding-top:32px}
+  .layers>li{grid-template-columns:1fr;gap:6px}
+  .btn{padding:0 18px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="rail" aria-label="攻擊路線圖">
+    <h2>攻擊路線圖</h2>
+    <p class="legend"><i style="background:var(--line)"></i>攻擊者走過的路　<i style="background:var(--gate)"></i>系統邊界</p>
+    <ol class="route" id="route"></ol>
+  </aside>
+  <main>
+    <section class="screen" id="screen" tabindex="-1" aria-live="polite"></section>
+    <nav class="controls">
+      <button class="btn" id="prev">上一步</button>
+      <div class="dots" id="dots" aria-hidden="true"></div>
+      <button class="btn primary" id="next">下一步</button>
+    </nav>
+  </main>
+</div>
+
+<script>
+const NODES = [
+  {t:'st', id:0, nm:'公網上的攻擊者'},
+  {t:'gate', nm:'邊界一 應用程式', b:1},
+  {t:'st', id:1, nm:'NextChat 容器'},
+  {t:'gate', nm:'邊界二 叢集內網', b:2},
+  {t:'st', id:2, nm:'路由快取'},
+  {t:'st', id:3, nm:'Zeabur API（管理員）'},
+  {t:'gate', nm:'邊界三 平台→雲端', b:4},
+  {t:'st', id:4, nm:'AWS root'},
+  {t:'st', id:5, nm:'叢集管理員'},
+  {t:'st', id:6, nm:'清理定時任務'},
+  {t:'gate', nm:'邊界四 叢集→核心', b:7},
+  {t:'st', id:7, nm:'核心資料庫'}
+];
+
+const LESSONS = [
+  {
+    title:'從一個普通網站進門',
+    time:'8 月 27 日（入侵時間未公開）',
+    what:'Zeabur 的共享叢集上，有用戶部署了開源聊天介面 NextChat v2.16.1。這個版本有漏洞 CVE-2026-7644：MCP 功能的授權檢查不足。攻擊者從公網打這個漏洞，拿到在容器裡執行程式的能力，也就是 RCE（遠端程式碼執行）。',
+    why:'漏洞在用戶自己的服務裡，不是 Zeabur 寫的程式。但對一個讓陌生人上傳程式碼的平台來說，「總有某個用戶的容器會被打穿」是必須預設的前提。',
+    analogy:'小偷從某位房客沒關好的窗戶爬進大樓。這時他只進到一間房，還不算闖進整棟樓。',
+    gain:'在一個用戶容器裡執行指令',
+    def:[['用戶','追版本、修補已知漏洞；用不到的功能（例如 MCP）就關掉。'],['平台','把每個租戶容器都當成「已經淪陷」來設計。接下來幾站，才是平台真正的責任範圍。']]
+  },
+  {
+    title:'在走廊閒晃，摸到路由快取',
+    time:'8 月 27 日（時間未公開）',
+    what:'共享叢集支援跨專案的內網連線，而當時的存取控制沒擋住從用戶容器連往 ingress namespace 的流量。那裡有一份路由快取，原本只用來記錄「哪個網域對應哪個服務」，卻同時存著一批 Zeabur Legacy API Key。',
+    why:'兩個錯誤疊在一起：一是網路沒有隔離，租戶碰得到平台自己的元件；二是不該放憑證的地方放了憑證。',
+    analogy:'走廊上的門都沒鎖，而管理室外的公告欄上，掛著一串備用鑰匙。',
+    gain:'一批 Legacy API Key',
+    def:[['平台','NetworkPolicy 預設拒絕：租戶的 namespace 只能出網，連不到平台元件。'],['平台','路由資料和憑證分開存；快取要設密碼，並限制連線來源。']]
+  },
+  {
+    title:'一把一把試，試到管理員那把',
+    time:'UTC 02:36 首次使用管理員金鑰，03:53 首次讀到專案環境變數',
+    what:'攻擊者批次測試這些金鑰，篩出還有效、權限又高的，其中一把屬於 Zeabur 團隊管理員。Legacy API Key 沒有權限範圍（scope），也沒有有效期限。拿它呼叫 Zeabur API，可以查帳號、AI Hub、專案和服務設定。',
+    why:'這是一把「什麼都能開、永遠不會過期」的萬用鑰匙，而且管理員自己就在用這種長期金鑰。',
+    note:'注意時間：03:53 時攻擊者還沒碰到 AWS，光靠這把金鑰，就已經透過正常的 API 讀到第一批用戶秘密。',
+    analogy:'備用鑰匙裡，有一把是管理員的萬用鑰匙。',
+    gain:'Zeabur 管理員身分',
+    def:[['平台','Token 必須有 scope、有期限、可撤銷，並留下稽核紀錄。'],['平台','管理員操作改用短期憑證加 MFA，不發長期金鑰。'],['平台','偵測批次試金鑰：大量失敗中夾著少數成功，是很明顯的訊號。']]
+  },
+  {
+    title:'從平台跳到雲端帳號',
+    time:'UTC 05:39 讀到內部服務設定，05:45 開始使用 AWS root 金鑰',
+    what:'攻擊者用管理員身分列出 Zeabur 自己的內部專案，讀到內部管理服務的環境變數。裡面有好幾組 AWS 金鑰，其中一組是長期保留的 AWS root 使用者金鑰。讀到之後，不到一分鐘他就開始使用。',
+    why:'Zeabur 的內部服務也以專案的形式放在平台上，所以「平台管理員」讀得到「平台自己的秘密」；更糟的是存了 root 金鑰，權限遠遠超過日常所需。',
+    analogy:'管理室的抽屜裡，放著整棟大樓物業系統的總帳號密碼。',
+    gain:'AWS root（雲端帳號最高權限）',
+    def:[['平台','AWS root 帳號不建立 access key，只保留給緊急狀況並綁 MFA。'],['平台','服務改用 IAM Role 和短期憑證，不在環境變數裡放長期金鑰。'],['平台','內部系統的秘密不要和客戶平台放在同一套權限底下；root 一被使用就告警。']]
+  },
+  {
+    title:'回到叢集，這次拿下總控台',
+    time:'UTC 06:08 出現異常一次性工作，07:26 某服務帳號被授予叢集管理員',
+    what:'攻擊者以 root 身分列舉雲端資源，進入東京共享叢集，建立一次性的 Job，並把一個 ServiceAccount 綁上 cluster-admin。這是他第二次進入同一個叢集：第一次是普通房客，這一次握著總控台。',
+    why:'雲端帳號的最高權限，可以直接改寫 K8s 的授權設定；而這種高權限變更，當時沒有即時告警。',
+    note:'回顧觀念：AWS 權限不是「SSH 進一台機器」，而是能對整個環境下指令。攻擊者沒有登入任何主機，而是從控制面改了權限。',
+    analogy:'拿到物業總帳號後，他把自己的識別證改成「總管理員」。',
+    gain:'東京共享叢集 cluster-admin',
+    def:[['平台','EKS 只授權特定 Role 進入叢集，root 也不例外地受限。'],['平台','用 admission policy 禁止新增 cluster-admin 綁定；任何 ClusterRoleBinding 變更都告警。'],['平台','稽核 log 送到攻擊者改不到的帳號或服務。']]
+  },
+  {
+    title:'找到一張通往總部的通行證',
+    time:'UTC 07:26 之後',
+    what:'共享叢集裡有一個「清理服務」的定時維運任務。因為工作需要，它能透過私有網路連回 Zeabur 的核心系統，而且它持有的資料庫憑證能讀取超出實際需要的內容。攻擊者控制叢集後，這條通道和這組憑證一起到手。',
+    why:'「憑證加通道」同時出現在一個正在退場、沒人盯著的邊緣環境裡。只缺其中一樣，這一站都過不去。',
+    analogy:'清潔工的工作證可以進總部大樓，而且能打開總部所有的檔案櫃。',
+    gain:'私有網路通道＋核心資料庫憑證',
+    def:[['平台','維運任務的資料庫帳號只給它要用的表和操作，例如只能更新服務狀態，讀不到環境變數。'],['平台','把方向反過來：由核心系統去拉取清理清單，而不是讓邊緣環境連回核心。'],['平台','真的需要連線時，中間放一層只開放特定操作的內部 API，不直接給資料庫連線。']]
+  },
+  {
+    title:'抵達核心資料庫',
+    time:'UTC 07:54 首次入侵紀錄，11:52 起大量讀取；隔天 02:34 才收到外部回報',
+    what:'Zeabur 的核心系統放在另一家雲端，正式資料庫沒有公開入口，只能走私有網路。但私有網路被當成受信任的流量。攻擊者用清理任務的身分連進去，大量讀取專案環境變數：AI 金鑰、雲端憑證、資料庫密碼、簽章金鑰。',
+    why:'所有用戶的秘密集中存在同一個資料庫，而且讀得到資料庫就讀得到明文。監控也沒有發現：從首次入侵到收到用戶回報，將近 19 小時。',
+    analogy:'清潔工身分走進總部，打開檔案櫃，把每一位房客的鑰匙便條全部拍下來。',
+    gain:'受影響用戶的所有環境變數',
+    def:[['平台','秘密做信封加密（envelope encryption），解密金鑰放在 KMS 並限制誰能解，讓「讀到資料庫」不等於「讀到明文」。'],['平台','能不集中就不集中：Zeabur 事後改為把環境變數存在用戶自己的專用伺服器上。'],['平台','對大量、異常的秘密查詢設告警。']]
+  }
+];
+
+const DEFENSES = [
+  {id:'d1', who:'用戶', nm:'修補 NextChat 漏洞', sub:'用戶追版本，或關掉用不到的 MCP 功能', stop:1, msg:'漏洞已修補，攻擊者連第一間房都進不去。'},
+  {id:'d2', who:'平台', nm:'租戶網路預設拒絕', sub:'NetworkPolicy：用戶容器連不到平台元件', stop:2, msg:'用戶容器連不到路由快取，攻擊者被關在自己那間房裡。'},
+  {id:'d3', who:'平台', nm:'快取裡不存憑證', sub:'路由資料與金鑰分開保存', stop:2, msg:'摸到快取了，但裡面只有網域對照表，沒有鑰匙。'},
+  {id:'d4', who:'平台', nm:'金鑰有 scope 與期限', sub:'管理員改用短期憑證加 MFA', stop:3, msg:'試到的金鑰不是過期就是權限很小，拿不到管理員身分。'},
+  {id:'d5', who:'平台', nm:'不保留 AWS root 金鑰', sub:'服務改用 IAM Role 與短期憑證', stop:4, msg:'內部服務裡沒有 root 金鑰，平台身分跳不到雲端帳號。'},
+  {id:'d6', who:'平台', nm:'禁止新增 cluster-admin 綁定', sub:'admission policy 擋下高權限變更', stop:5, msg:'授予叢集管理員的請求被擋下，拿不到總控台。'},
+  {id:'d7', who:'平台', nm:'維運任務最小權限、不連回核心', sub:'改由核心拉取，任務帳號讀不到環境變數', stop:7, msg:'任務連不回核心，或它的資料庫帳號讀不到環境變數。'},
+  {id:'d8', who:'平台', nm:'環境變數加密、金鑰放 KMS', sub:'讀到資料庫不等於讀到明文', stop:7, msg:'連進資料庫了，但拿到的都是密文，解密金鑰在 KMS 裡碰不到。'},
+  {id:'d9', who:'平台', nm:'異常行為告警', sub:'批次試金鑰、root 使用、權限變更、大量查詢', stop:null, detect:true}
+];
+
+const QUIZ = [
+  {q:'攻擊者最初是從哪裡進入 Zeabur 的環境？', o:['外洩的 AWS root 金鑰','用戶部署的 NextChat 漏洞','Zeabur 員工的電腦','暴力破解資料庫密碼'], a:1,
+   e:'早期報導多半寫「外洩的 AWS 管理憑證」，但完整報告顯示，AWS 金鑰是攻擊者到第 4 站才從內部挖出來的。'},
+  {q:'Legacy API Key 讓事件擴大的主要原因是什麼？', o:['金鑰太短，容易被猜到','沒有權限範圍，也沒有有效期限','用明文在網路上傳輸','只限台灣 IP 使用'], a:1,
+   e:'一把不分範圍、永不過期的金鑰，只要外洩一次，就能一直使用它的全部權限。'},
+  {q:'核心資料庫沒有公開入口，攻擊者是怎麼連進去的？', o:['掃到一個沒公開的連接埠','借用叢集裡清理任務的私有網路和資料庫憑證','用 AWS root 直接登入資料庫主機','打電話騙客服說出密碼'], a:1,
+   e:'核心系統在另一家雲端，AWS root 管不到它。真正的通道是那個定時任務原本就有的「受信任」連線。'},
+  {q:'下列哪一項防禦不會截斷這條路徑，而是縮短攻擊者停留的時間？', o:['租戶網路預設拒絕','異常行為告警','金鑰加上 scope','環境變數加密'], a:1,
+   e:'告警不會擋路，但能讓團隊更早發現、更早切斷。這次從第一個異常請求到收到回報，整整隔了一天。'}
+];
+
+const state = {idx:0, checked:{}, answers:{}};
+try{
+  const saved = JSON.parse(localStorage.getItem('zeabur-route-v1')||'null');
+  if(saved && typeof saved.idx==='number'){Object.assign(state, saved)}
+}catch(e){}
+function save(){try{localStorage.setItem('zeabur-route-v1', JSON.stringify(state))}catch(e){}}
+
+/* ---------- route rail ---------- */
+const routeEl = document.getElementById('route');
+routeEl.innerHTML = NODES.map(n => n.t==='st'
+  ? `<li class="st" data-st="${n.id}"><span class="dot"></span><span class="nm">${n.nm}</span></li>`
+  : `<li class="gate" data-b="${n.b}"><span class="bar"></span><span class="nm">${n.nm}</span></li>`
+).join('');
+
+function paintRoute(reached, here, cut){
+  routeEl.querySelectorAll('li').forEach(li=>{
+    li.classList.remove('on','through','here','cut','start');
+    if(li.dataset.st!==undefined){
+      const s = +li.dataset.st;
+      if(s===0) li.classList.add('start');
+      if(s<=reached && s>0) li.classList.add('on');
+      if(s<reached) li.classList.add('through');
+      if(here!==null && s===here) li.classList.add('here');
+      if(cut!==null && s===cut) li.classList.add('cut');
+    }else{
+      if(+li.dataset.b<=reached) li.classList.add('on');
+    }
+  });
+  const target = routeEl.querySelector('.here, .cut');
+  if(target && window.matchMedia('(max-width:860px)').matches){
+    target.scrollIntoView({inline:'center', block:'nearest', behavior: matchMedia('(prefers-reduced-motion:reduce)').matches?'auto':'smooth'});
+  }
+}
+
+/* ---------- screens ---------- */
+function lessonScreen(i){
+  const L = LESSONS[i], n = i+1;
+  const pocket = LESSONS.slice(0,n).map((x,k)=>`<li class="${k===i?'new':''}">${x.gain}</li>`).join('');
+  return {
+    route:()=>[n,n,null],
+    html:()=>`
+      <p class="kicker">第 ${n} 站，共 7 站</p>
+      <h2 class="t">${L.title}</h2>
+      <span class="time">${L.time}</span>
+      <h3>發生什麼</h3><p>${L.what}</p>
+      <h3>為什麼過得去</h3><p>${L.why}</p>
+      ${L.note?`<div class="note">${L.note}</div>`:''}
+      <p class="analogy">${L.analogy}</p>
+      <div class="pocket"><b>攻擊者手上現在有</b><ol>${pocket}</ol></div>
+      <h3>這一站怎麼擋</h3>
+      <ul class="def">${L.def.map(([w,t])=>`<li><span class="who ${w==='用戶'?'u':''}">${w}</span>${t}</li>`).join('')}</ul>`
+  };
+}
+
+function gameResult(){
+  const sel = DEFENSES.filter(d=>state.checked[d.id]);
+  const blockers = sel.filter(d=>d.stop!==null).sort((a,b)=>a.stop-b.stop);
+  const detect = sel.some(d=>d.detect);
+  const first = blockers[0];
+  let html, ok=false, route;
+  if(!sel.length){
+    html = `<strong>沒有任何防線</strong><p>攻擊者一路走到核心資料庫，就跟真實事件一樣。試著勾選一項防禦。</p>`;
+    route = [7,7,null];
+  }else if(!first){
+    html = `<strong>路徑沒有被截斷</strong><p>告警不會擋路，但最早的異常 API 請求出現在 UTC 02:34。如果當下就有針對批次試金鑰的告警，會比實際收到外部回報早整整一天發現。</p>`;
+    route = [7,7,null];
+  }else{
+    ok = true;
+    const s = first.stop;
+    html = `<strong>攻擊停在第 ${s} 站</strong><p>${first.msg}</p>`;
+    if(s>3) html += `<p>不過要注意：第 3 站時，攻擊者已經用管理員金鑰透過 API 讀到一部分環境變數。越晚擋下，已經造成的損害越多。</p>`;
+    if(blockers.length>1) html += `<p>你還多勾了 ${blockers.length-1} 道防線。單看這條路徑用不到，但攻擊者被擋下後會換路，多層防禦就是為了那時候。</p>`;
+    if(detect) html += s<=2
+      ? `<p>告警這次沒機會響，因為攻擊在更前面就停了。</p>`
+      : `<p>加上告警，最早在 UTC 02:34 第一個異常 API 請求出現時就能發現。</p>`;
+    route = [s-1, null, s];
+  }
+  return {html, ok, route};
+}
+
+const SCREENS = [
+  {
+    route:()=>[0,0,null],
+    html:()=>`
+      <p class="kicker">Lateral Line 01：Zeabur｜2026 年八月資安事件路線圖</p>
+      <h1>一把鑰匙<br>走了多遠</h1>
+      <p class="lead">2026 年 8 月 27 日，攻擊者從一個用戶架的聊天網站進門，跨過四道系統邊界，最後讀走了 Zeabur 核心資料庫裡用戶的環境變數。</p>
+      <p>這堂課沿著官方的事件報告，一站一站走一遍。每一站看三件事：發生什麼、為什麼過得去、怎麼擋。走完之後，你可以自己關上閘門，看看攻擊會停在哪裡。</p>
+      <p class="muted">旁邊的路線圖會跟著你前進：紅線是攻擊者走過的路，藍色橫條是系統邊界。報告裡的時間都是 UTC，台灣時間要再加 8 小時。</p>`
+  },
+  ...LESSONS.map((_,i)=>lessonScreen(i)),
+  {
+    route:()=>gameResult().route,
+    html:()=>`
+      <p class="kicker">換你守門</p>
+      <h2 class="t">關上閘門，看攻擊停在哪</h2>
+      <p>勾選你要部署的防禦，左邊的路線圖會顯示攻擊者被擋在哪一站。可以只勾一項，也可以全部勾。</p>
+      <ul class="checks">${DEFENSES.map(d=>`
+        <li><label><input type="checkbox" data-d="${d.id}" ${state.checked[d.id]?'checked':''}>
+        <span>${d.nm}<small>${d.who}｜${d.sub}${d.stop?`｜擋在第 ${d.stop} 站`:'｜不擋路，只縮短停留時間'}</small></span></label></li>`).join('')}
+      </ul>
+      <div class="result" id="result"></div>`,
+    after(){
+      const box = document.getElementById('result');
+      const update = ()=>{const r=gameResult(); box.innerHTML=r.html; box.classList.toggle('ok',r.ok); paintRoute(...r.route)};
+      document.querySelectorAll('[data-d]').forEach(cb=>cb.addEventListener('change',()=>{
+        state.checked[cb.dataset.d]=cb.checked; save(); update();
+      }));
+      update();
+    }
+  },
+  {
+    route:()=>[7,null,null],
+    html:()=>`
+      <p class="kicker">把七站整理成六個面向</p>
+      <h2 class="t">要防範，可以從哪裡下手</h2>
+      <p>每個面向都對應到這次至少一站的失守。前五項是平台方的責任，最後一項是用戶自己能做的事。</p>
+      <ul class="layers">
+        <li><h4>租戶隔離<span>第 1、2 站</span></h4><ul>
+          <li>預設每個租戶容器都會被攻破，用 gVisor、Kata 這類沙箱提高逃逸難度。</li>
+          <li>NetworkPolicy 預設拒絕，租戶之間、租戶和平台元件之間都不互通。</li></ul></li>
+        <li><h4>機密存放<span>第 2、4、7 站</span></h4><ul>
+          <li>憑證只放在專門的 secrets manager，不散落在快取、設定檔或環境變數裡。</li>
+          <li>信封加密加 KMS，讓讀到資料庫不等於讀到明文；能不集中就不集中。</li></ul></li>
+        <li><h4>身分與權限<span>第 3、4、5 站</span></h4><ul>
+          <li>所有 token 都要有 scope、有期限、可撤銷、可稽核。</li>
+          <li>不保留雲端 root 金鑰；服務用角色和短期憑證；管理員操作綁 MFA。</li>
+          <li>叢集授權變更要經過 admission policy，cluster-admin 不能隨手綁。</li></ul></li>
+        <li><h4>環境邊界<span>第 6、7 站</span></h4><ul>
+          <li>邊緣環境一律不信任，不建立直通核心的私有通道。</li>
+          <li>需要溝通時由核心去拉，或中間隔一層只開放特定操作的 API。</li></ul></li>
+        <li><h4>偵測與治理<span>每一站</span></h4><ul>
+          <li>對批次試金鑰、root 使用、高權限變更、大量秘密查詢設告警，稽核 log 放在攻擊者碰不到的地方。</li>
+          <li>退場中的系統要維持同等防護，不然就盡快真的關掉。這次每一站都是「舊東西」。</li></ul></li>
+        <li><h4>用戶自保<span>平台倒了也有用</span></h4><ul>
+          <li>每個專案用獨立金鑰，並在 AI、雲端服務後台設用量上限與警示。</li>
+          <li>定期輪替秘密；出事時先撤銷、再換新。</li>
+          <li>留好出口：程式碼、資料備份、秘密清單、網域都在自己手上。</li></ul></li>
+      </ul>`
+  },
+  {
+    route:()=>[7,null,null],
+    html:()=>{
+      const done = QUIZ.filter((_,i)=>state.answers[i]!==undefined).length;
+      const score = QUIZ.filter((q,i)=>state.answers[i]===q.a).length;
+      return `
+      <p class="kicker">四題小測驗</p>
+      <h2 class="t">確認一下你記得多少</h2>
+      ${QUIZ.map((q,i)=>{
+        const ans = state.answers[i];
+        return `<div class="q"><h3>${i+1}. ${q.q}</h3><div class="opts">${q.o.map((o,j)=>{
+          let cls='opt';
+          if(ans!==undefined){ if(j===q.a) cls+=' right'; else if(j===ans) cls+=' wrong'; }
+          return `<button class="${cls}" data-q="${i}" data-o="${j}" ${ans!==undefined?'disabled':''}>${o}</button>`;
+        }).join('')}</div>${ans!==undefined?`<p class="explain">${ans===q.a?'答對了。':'不是這個。'}${q.e}</p>`:''}</div>`;
+      }).join('')}
+      ${done===QUIZ.length?`<p class="score">答對 ${score} / ${QUIZ.length} 題</p><button class="btn" id="retry">重新作答</button>`:''}`;
+    },
+    after(){
+      document.querySelectorAll('.opt').forEach(b=>b.addEventListener('click',()=>{
+        state.answers[b.dataset.q]=+b.dataset.o; save(); render(false);
+        const el = document.querySelector(`[data-q="${b.dataset.q}"]`); if(el) el.closest('.q').scrollIntoView({block:'nearest'});
+      }));
+      const r=document.getElementById('retry'); if(r) r.addEventListener('click',()=>{state.answers={}; save(); render()});
+    }
+  },
+  {
+    route:()=>[7,null,null],
+    html:()=>`
+      <p class="kicker">走完全程</p>
+      <h2 class="t">三件值得帶走的事</h2>
+      <ol class="takeaways">
+        <li>入口幾乎不可能完全避免，用戶的服務總會有漏洞。平台的責任是讓攻擊者過了第一站之後就走不下去。</li>
+        <li>沿路的每一站都是舊東西：退場中的叢集、Legacy API Key、長期保留的 root 金鑰、舊的維運任務。正在退場，不代表已經安全。</li>
+        <li>秘密集中就是單點。只要讀得到那個資料庫，就等於拿到所有人的鑰匙。</li>
+      </ol>
+      <h3>後來呢</h3>
+      <p>10 月 14 日 Zeabur 又被入侵一次，路徑不同：攻擊者拿到共享叢集的平台管理憑證，直接進入用戶容器執行指令，讀取資料庫內容與環境變數。管理憑證怎麼外洩，官方還沒公布。三天後，Zeabur 宣布 12 月 31 日前結束營運。</p>
+      <p>明明修好了，為什麼又被駭？攻擊者可能把後門藏在哪裡？下一課接著講：<a href="https://claude.ai/artifact/Rvs7meSXAfqkYwGUNNkipT" target="_blank" rel="noopener">Lateral Line 02：Zeabur｜門修好了，人還在嗎</a></p>
+      <h3>資料來源</h3>
+      <ul class="src">
+        <li><a href="https://zeabur.com/zh-TW/blogs/august-2026-security-incident" target="_blank" rel="noopener">Zeabur 2026 年八月資安事件（官方完整報告，9 月 7 日）</a></li>
+        <li><a href="https://status.zeabur.com/incident/1037896" target="_blank" rel="noopener">八月事件狀態頁</a></li>
+        <li><a href="https://status.zeabur.com/incident/1091243" target="_blank" rel="noopener">十月事件狀態頁</a></li>
+        <li><a href="https://foreverwebs.com/blog/zeabur-second-security-incident-shutdown-analysis" target="_blank" rel="noopener">恆遠數位：第二次資安事件與停運拆解</a></li>
+      </ul>
+      <button class="btn inline-btn" id="restart">從頭再走一次</button>`,
+    after(){document.getElementById('restart').addEventListener('click',()=>{state.idx=0; save(); render()})}
+  }
+];
+
+/* ---------- navigation ---------- */
+const screenEl = document.getElementById('screen');
+const prevBtn = document.getElementById('prev'), nextBtn = document.getElementById('next');
+const dotsEl = document.getElementById('dots');
+if(state.idx<0 || state.idx>=SCREENS.length) state.idx=0;
+
+function render(resetScroll=true){
+  const s = SCREENS[state.idx];
+  screenEl.innerHTML = s.html();
+  paintRoute(...s.route());
+  if(s.after) s.after();
+  prevBtn.disabled = state.idx===0;
+  nextBtn.textContent = state.idx===0 ? '出發' : state.idx===SCREENS.length-1 ? '回到起點' : '下一步';
+  dotsEl.innerHTML = SCREENS.map((_,i)=>`<span class="${i<state.idx?'done':i===state.idx?'now':''}"></span>`).join('');
+  if(resetScroll){window.scrollTo(0,0); screenEl.focus({preventScroll:true})}
+}
+function go(d){
+  state.idx = d>0 && state.idx===SCREENS.length-1 ? 0 : Math.max(0, Math.min(SCREENS.length-1, state.idx+d));
+  save(); render();
+}
+prevBtn.addEventListener('click',()=>go(-1));
+nextBtn.addEventListener('click',()=>go(1));
+document.addEventListener('keydown',e=>{
+  if(e.target.matches('input,button,a')) return;
+  if(e.key==='ArrowRight') go(1);
+  if(e.key==='ArrowLeft') go(-1);
+});
+render();
+</script>
+</body>
+</html>

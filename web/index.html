@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lateral Line｜Zeabur 事故觀察</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F2F4F6; --surface:#FFFFFF; --ink:#18212E; --muted:#5B6676;
+  --line:#D23B27; --line-soft:#F8DDD8; --gate:#2B63D9; --gate-soft:#DCE6FB;
+  --rule:#D3D9E0;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#0F151D; --surface:#17202B; --ink:#E7ECF2; --muted:#9AA6B5;
+    --line:#FF6B54; --line-soft:#3A1F1C; --gate:#729DFF; --gate-soft:#1C2A47;
+    --rule:#2A3543;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0F151D; --surface:#17202B; --ink:#E7ECF2; --muted:#9AA6B5;
+  --line:#FF6B54; --line-soft:#3A1F1C; --gate:#729DFF; --gate-soft:#1C2A47;
+  --rule:#2A3543;
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+body{
+  margin:0;min-height:100vh;background:var(--paper);color:var(--ink);
+  font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  font-size:17px;line-height:1.75;-webkit-font-smoothing:antialiased;
+}
+a{color:var(--gate);text-decoration:none}
+:focus-visible{outline:3px solid var(--gate);outline-offset:3px;border-radius:4px}
+
+main{max-width:720px;margin:0 auto;padding:64px 24px 80px}
+header{margin-bottom:48px}
+header .kicker{font-size:13px;font-weight:700;letter-spacing:.08em;color:var(--line);text-transform:uppercase}
+header h1{font-size:28px;font-weight:900;margin:8px 0 12px}
+header p{color:var(--muted);margin:0}
+
+.entries{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:16px}
+.entries li{border:1px solid var(--rule);border-radius:12px;background:var(--surface)}
+.entries a{display:block;padding:20px 24px;color:inherit}
+.entries a:hover{background:var(--gate-soft)}
+.entries .num{display:inline-block;font-size:13px;font-weight:700;color:var(--muted);margin-bottom:4px}
+.entries .title{font-size:18px;font-weight:700}
+.entries .sub{font-size:14px;color:var(--muted);margin-top:4px}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="kicker">Lateral Line</div>
+    <h1>Zeabur 事故觀察</h1>
+    <p>側線——魚類感知水流擾動的感官。這裡記錄 Zeabur 兩次資安事故的觀察與分析。</p>
+  </header>
+  <ul class="entries">
+    <li>
+      <a href="01-zeabur-2026-08/">
+        <span class="num">01 · 2026-08</span>
+        <div class="title">一把鑰匙走了多遠</div>
+        <div class="sub">Zeabur 第一次資安事故</div>
+      </a>
+    </li>
+    <li>
+      <a href="02-zeabur-2026-10/">
+        <span class="num">02 · 2026-10</span>
+        <div class="title">門修好了，人還在嗎</div>
+        <div class="sub">Zeabur 第二次資安事故</div>
+      </a>
+    </li>
+  </ul>
+</main>
+</body>
+</html>

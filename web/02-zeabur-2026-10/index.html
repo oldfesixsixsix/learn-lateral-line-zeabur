@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lateral Line 02：Zeabur｜門修好了，人還在嗎</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F2F4F6; --surface:#FFFFFF; --ink:#18212E; --muted:#5B6676;
+  --line:#D23B27; --line-soft:#F8DDD8; --gate:#2B63D9; --gate-soft:#DCE6FB;
+  --safe:#15855A; --safe-soft:#D8F0E5; --rule:#D3D9E0; --idle:#B6BFCB;
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#0F151D; --surface:#17202B; --ink:#E7ECF2; --muted:#9AA6B5;
+    --line:#FF6B54; --line-soft:#3A1F1C; --gate:#729DFF; --gate-soft:#1C2A47;
+    --safe:#43C98F; --safe-soft:#15332A; --rule:#2A3543; --idle:#4A5562;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0F151D; --surface:#17202B; --ink:#E7ECF2; --muted:#9AA6B5;
+  --line:#FF6B54; --line-soft:#3A1F1C; --gate:#729DFF; --gate-soft:#1C2A47;
+  --safe:#43C98F; --safe-soft:#15332A; --rule:#2A3543; --idle:#4A5562;
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{
+  margin:0;min-height:100%;background:var(--paper);color:var(--ink);
+  font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  font-size:17px;line-height:1.75;-webkit-font-smoothing:antialiased;
+}
+a{color:var(--gate)}
+button{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--gate);outline-offset:3px;border-radius:4px}
+
+.app{display:grid;grid-template-columns:300px minmax(0,1fr);min-height:100vh;min-height:100dvh}
+
+/* ---------- route rail ---------- */
+.rail{
+  position:sticky;top:0;align-self:start;height:100vh;height:100dvh;overflow-y:auto;
+  padding:32px 20px 32px 28px;border-right:1px solid var(--rule);background:var(--surface);
+}
+.rail h2{font-size:15px;font-weight:700;margin:0 0 4px;color:var(--muted)}
+.rail .legend{font-size:13px;color:var(--muted);margin:0 0 22px;line-height:1.6}
+.legend i{display:inline-block;width:18px;height:4px;border-radius:2px;vertical-align:middle;margin-right:4px}
+.route{list-style:none;margin:0;padding:0}
+.route li{position:relative;padding-left:34px}
+.route li::before{ /* track segment leading into this item */
+  content:"";position:absolute;left:9px;top:-2px;bottom:50%;width:6px;border-radius:3px;
+  background:var(--idle);transition:background .35s;
+}
+.route li:first-child::before{display:none}
+.route li.on::before{background:var(--line)}
+.route li.st{min-height:46px;display:flex;align-items:center}
+.route li.st::after{ /* lower half of track */
+  content:"";position:absolute;left:9px;top:50%;bottom:-2px;width:6px;border-radius:3px;background:var(--idle);transition:background .35s;
+}
+.route li.st:last-child::after{display:none}
+.route li.st.through::after{background:var(--line)}
+.dot{
+  position:absolute;left:2px;top:50%;width:20px;height:20px;margin-top:-10px;border-radius:50%;
+  background:var(--surface);border:4px solid var(--idle);z-index:1;transition:border-color .35s,background .35s;
+}
+.st.on .dot,.st.start .dot{border-color:var(--line)}
+.st.here .dot{background:var(--line)}
+.st.cut .dot{border-color:var(--safe);background:var(--safe)}
+.st.cut .dot::before,.st.cut .dot::after{
+  content:"";position:absolute;left:50%;top:50%;width:10px;height:2px;background:var(--surface);
+  transform:translate(-50%,-50%) rotate(45deg);
+}
+.st.cut .dot::after{transform:translate(-50%,-50%) rotate(-45deg)}
+.st .nm{font-size:15px;font-weight:500;color:var(--muted);line-height:1.35}
+.st.on .nm,.st.start .nm{color:var(--ink)}
+.st.here .nm{font-weight:900}
+.st.cut .nm{color:var(--safe);font-weight:700}
+.route li.gate{min-height:34px;display:flex;align-items:center}
+.route li.gate::after{
+  content:"";position:absolute;left:9px;top:50%;bottom:-2px;width:6px;border-radius:3px;background:var(--idle);transition:background .35s;
+}
+.route li.gate.on::after{background:var(--line)}
+.gate .bar{
+  position:absolute;left:-4px;top:50%;width:32px;height:6px;margin-top:-3px;border-radius:3px;background:var(--gate);z-index:1;
+}
+.gate .nm{font-size:12.5px;color:var(--gate);font-weight:700;letter-spacing:.02em}
+
+/* ---------- main ---------- */
+main{display:flex;flex-direction:column;min-width:0}
+.screen{flex:1;padding:56px clamp(20px,6vw,72px) 32px;max-width:820px;width:100%}
+.screen:focus{outline:none}
+.kicker{font-size:14px;color:var(--muted);margin:0 0 6px}
+h1{font-size:clamp(40px,7vw,76px);line-height:1.08;font-weight:900;letter-spacing:-.02em;margin:0 0 20px}
+h2.t{font-size:clamp(28px,4.2vw,40px);line-height:1.25;font-weight:900;margin:0 0 14px;letter-spacing:-.01em}
+h3{font-size:16px;font-weight:700;margin:30px 0 6px}
+p{margin:0 0 14px;max-width:36em}
+.lead{font-size:19px;max-width:32em}
+.muted{color:var(--muted)}
+.time{display:inline-block;font-size:14px;color:var(--line);background:var(--line-soft);padding:2px 10px;border-radius:6px;margin:0 0 18px}
+.analogy{border-left:4px solid var(--gate);padding:4px 0 4px 16px;margin:20px 0;color:var(--muted);max-width:34em}
+.note{background:var(--gate-soft);padding:12px 16px;border-radius:8px;margin:18px 0;max-width:36em;font-size:16px}
+.pocket{margin:26px 0 4px;padding:14px 16px;border:1px dashed var(--line);border-radius:10px;max-width:36em}
+.pocket b{display:block;font-size:14px;color:var(--line);margin-bottom:6px}
+.pocket ol{margin:0;padding-left:1.4em;font-size:15.5px}
+.pocket li{color:var(--muted)}
+.pocket li.new{color:var(--ink);font-weight:700}
+.def{list-style:none;padding:0;margin:6px 0 0;max-width:36em}
+.def li{position:relative;padding:8px 0 8px 64px;border-top:1px solid var(--rule)}
+.def li:first-child{border-top:none}
+.who{position:absolute;left:0;top:10px;font-size:13px;font-weight:700;padding:1px 8px;border-radius:5px;background:var(--safe-soft);color:var(--safe)}
+.who.u{background:var(--gate-soft);color:var(--gate)}
+
+/* game */
+.checks{list-style:none;padding:0;margin:18px 0;max-width:38em}
+.checks li{border-top:1px solid var(--rule)}
+.checks label{display:flex;gap:14px;align-items:flex-start;padding:12px 4px;cursor:pointer}
+.checks input{width:22px;height:22px;margin-top:4px;accent-color:var(--safe);flex:none}
+.checks small{display:block;color:var(--muted);font-size:14px;line-height:1.5}
+.result{border-radius:10px;padding:16px 18px;margin:8px 0 0;max-width:38em;background:var(--line-soft)}
+.result.ok{background:var(--safe-soft)}
+.result strong{display:block;font-size:18px;margin-bottom:4px}
+.result p{margin:6px 0 0;font-size:16px}
+
+/* layers */
+.layers{list-style:none;padding:0;margin:20px 0;max-width:40em}
+.layers>li{display:grid;grid-template-columns:7.5em 1fr;gap:16px;padding:16px 0;border-top:1px solid var(--rule)}
+.layers h4{margin:0;font-size:17px;font-weight:900;line-height:1.4}
+.layers h4 span{display:block;font-size:13px;font-weight:500;color:var(--muted)}
+.layers ul{margin:0;padding-left:1.1em;font-size:16px}
+.layers li li{margin-bottom:4px}
+
+/* quiz */
+.q{margin:26px 0;max-width:38em}
+.q h3{font-size:18px;margin:0 0 10px}
+.opts{display:grid;gap:8px}
+.opt{
+  text-align:left;padding:12px 16px;border-radius:10px;border:2px solid var(--rule);background:var(--surface);cursor:pointer;line-height:1.5;
+}
+.opt:hover:not(:disabled){border-color:var(--gate)}
+.opt:disabled{cursor:default}
+.opt.right{border-color:var(--safe);background:var(--safe-soft)}
+.opt.wrong{border-color:var(--line);background:var(--line-soft)}
+.explain{font-size:15.5px;color:var(--muted);margin:10px 0 0}
+.score{font-size:20px;font-weight:900;margin:10px 0}
+
+/* end */
+.takeaways{counter-reset:t;list-style:none;padding:0;margin:20px 0;max-width:38em}
+.takeaways li{position:relative;padding:10px 0 10px 44px;border-top:1px solid var(--rule)}
+.takeaways li::before{counter-increment:t;content:counter(t);position:absolute;left:0;top:10px;width:28px;height:28px;border-radius:50%;background:var(--line);color:#fff;font-weight:900;font-size:15px;display:grid;place-items:center}
+.src{font-size:15px;padding-left:1.2em}
+
+/* nav */
+.controls{
+  position:sticky;bottom:0;display:flex;align-items:center;gap:14px;
+  padding:14px clamp(20px,6vw,72px) calc(14px + env(safe-area-inset-bottom,0px));
+  background:var(--paper);border-top:1px solid var(--rule);
+}
+.btn{
+  min-height:52px;padding:0 26px;border-radius:12px;border:2px solid var(--ink);background:transparent;font-weight:700;font-size:17px;cursor:pointer;
+}
+.btn.primary{background:var(--ink);color:var(--paper)}
+.btn:disabled{opacity:.3;cursor:default}
+.dots{flex:1;display:flex;justify-content:center;gap:7px;flex-wrap:wrap}
+.dots span{width:9px;height:9px;border-radius:50%;background:var(--idle)}
+.dots span.done{background:var(--line)}
+.dots span.now{background:var(--ink);transform:scale(1.35)}
+.inline-btn{margin-top:18px}
+
+@media (max-width:860px){
+  .app{grid-template-columns:1fr}
+  .rail{position:sticky;top:0;z-index:5;height:auto;border-right:none;border-bottom:1px solid var(--rule);padding:12px 16px 10px;overflow-x:auto;overflow-y:hidden}
+  .rail h2,.rail .legend{display:none}
+  .route{display:flex;align-items:flex-start;width:max-content;padding-right:16px}
+  .route li{padding-left:0;padding-top:30px;min-height:0!important;display:block!important;width:78px;text-align:center}
+  .route li.gate{width:46px}
+  .route li::before{left:-2px;right:50%;top:12px;bottom:auto;width:auto;height:6px}
+  .route li.st::after,.route li.gate::after{left:50%;right:-2px;top:12px;bottom:auto;width:auto;height:6px}
+  .dot{left:50%;top:5px;margin:0 0 0 -10px}
+  .gate .bar{left:50%;top:0;width:6px;height:30px;margin:0 0 0 -3px}
+  .st .nm{font-size:11.5px;display:block;padding:0 2px}
+  .gate .nm{font-size:10.5px;display:block;line-height:1.25}
+  body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+  .screen{padding-top:32px}
+  .layers>li{grid-template-columns:1fr;gap:6px}
+  .btn{padding:0 18px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+.route li.r::before{background:var(--line)}
+.route li.g::before{background:var(--safe)}
+.route li.st.ar::after{background:var(--line)}
+.route li.st.ag::after{background:var(--safe)}
+.st.dirty .dot{border-color:var(--line)}
+.st.here2 .dot{border-color:var(--line);background:var(--line)}
+.st.clean .dot{border-color:var(--safe);background:var(--safe)}
+.st.dirty .nm{color:var(--ink)}
+.st.here2 .nm{color:var(--ink);font-weight:900}
+.st.clean .nm{color:var(--safe);font-weight:700}
+.tag{display:inline-block;font-size:13px;font-weight:700;padding:1px 8px;border-radius:5px;margin-right:6px;vertical-align:2px}
+.tag.ok{background:var(--safe-soft);color:var(--safe)}
+.tag.no{background:var(--line-soft);color:var(--line)}
+.tag.gen{background:var(--gate-soft);color:var(--gate)}
+.facts{list-style:none;padding:0;margin:10px 0;max-width:38em}
+.facts li{padding:9px 0;border-top:1px solid var(--rule);font-size:16px}
+.facts li:first-child{border-top:none}
+.cmp{width:100%;max-width:40em;border-collapse:collapse;margin:14px 0;font-size:15.5px}
+.cmp th,.cmp td{text-align:left;vertical-align:top;padding:9px 10px;border-top:1px solid var(--rule)}
+.cmp th{font-weight:700;color:var(--muted);width:6em}
+.cmp thead th{border-top:none;color:var(--ink)}
+.tbl{overflow-x:auto}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="rail" aria-label="後門藏身處地圖">
+    <h2>後門藏身處地圖</h2>
+    <p class="legend"><i style="background:var(--line)"></i>可能藏著後門　<i style="background:var(--safe)"></i>已清查</p>
+    <ol class="route" id="route"></ol>
+  </aside>
+  <main>
+    <section class="screen" id="screen" tabindex="-1" aria-live="polite"></section>
+    <nav class="controls">
+      <button class="btn" id="prev">上一步</button>
+      <div class="dots" id="dots" aria-hidden="true"></div>
+      <button class="btn primary" id="next">下一步</button>
+    </nav>
+  </main>
+</div>
+
+<script>
+const LINE01 = 'https://claude.ai/artifact/3ruWcSokBXGDcwQhR3CTch';
+
+const NODES = [
+  {id:0, nm:'已修補的入口'},
+  {id:1, nm:'雲端帳號'},
+  {id:2, nm:'叢集控制面'},
+  {id:3, nm:'主機'},
+  {id:4, nm:'網路通道'},
+  {id:5, nm:'供應鏈'},
+  {id:6, nm:'身分與工作階段'},
+  {id:7, nm:'攻擊者回來'}
+];
+
+const SPOTS = [
+  {
+    nm:'雲端帳號',
+    hide:'新建一個名字看起來很正常的 IAM 使用者或 access key；在某個既有 Role 的信任政策裡，偷偷加上攻擊者自己的 AWS 帳號；或放一個定時觸發的 Lambda，每天替他開一次門。',
+    why:'名字可以取得像內部服務，長期金鑰不會過期，而且一個用了幾年的雲端帳號裡，本來就有一堆沒人記得是誰建的資源。',
+    case:[['ok','8 月時攻擊者確實拿到 AWS root，並列舉了雲端資源。'],['gen','官方報告沒有提到是否在 AWS 留下後門。']],
+    clean:['從 CloudTrail 拉出攻擊時段內所有建立、修改、附加權限的呼叫，逐一回滾。','用 IAM Access Analyzer 找出所有「信任外部帳號」的 Role。','最乾淨的做法：開一個新帳號，從可信的程式碼重新部署，舊帳號整個廢棄。']
+  },
+  {
+    nm:'叢集控制面',
+    hide:'建一個 ServiceAccount 綁上高權限；放一個 CronJob 或 DaemonSet 定期回連；註冊一個 admission webhook，讓之後每個新建的 Pod 都被自動塞進惡意容器；或者直接把 ServiceAccount token、kubeconfig 帶走。',
+    why:'K8s 裡的物件數量龐大，系統元件本身就會建一堆 ServiceAccount 和 RoleBinding，多一個很難一眼看出來。',
+    case:[['ok','8 月報告記載：攻擊者在東京共享叢集建立了異常的一次性工作，並把一個服務帳號授予叢集管理員權限。'],['ok','事後官方移除了「已識別」的異常叢集授權，並汰換了共享叢集主機。'],['ok','10 月攻擊者持有共享叢集的平台管理憑證，從哪裡來的，官方尚未公布。']],
+    note:'注意「已識別」這三個字。清除只能清掉你找得到的東西，沒被識別出來的，就不會被移除。',
+    clean:['回放 K8s audit log，列出攻擊者建立或修改過的每一個物件。','叢集狀態由 Git 宣告（GitOps），任何不在 repo 裡的物件都視為異常。','輪替 ServiceAccount token 的簽章金鑰；真的不確定，就整個叢集重建。']
+  },
+  {
+    nm:'主機',
+    hide:'在 authorized_keys 加一把自己的公鑰；新增系統使用者；用 cron 或 systemd 放一個開機就會執行的服務；改 sshd 設定。',
+    why:'公鑰只是一行文字，混在一堆金鑰裡很難看出來；名字取得好的話，連看到的人都會以為是同事放的。',
+    case:[['ok','10 月官方狀態頁要求 Google Cloud 專用伺服器的用戶更改 root 密碼，並移除不認得的 SSH 金鑰，特別是標成 zeabur-pentest 的那一把。']],
+    note:'zeabur-pentest 這個名字，看起來像是「Zeabur 內部做滲透測試用的」。把後門偽裝成自己人留下的東西，是很典型的潛伏手法。',
+    clean:['不在原機上清，直接用乾淨的映像檔重建主機。','SSH 改用短期憑證（SSH CA），沒有長期有效的公鑰可以藏。','authorized_keys 由設定管理工具統一下發，有偏差就告警。']
+  },
+  {
+    nm:'網路通道',
+    hide:'在 VPN 或 WireGuard 上多加一個 peer；在防火牆或安全群組多開一條規則；或讓某個容器主動往外連到攻擊者的伺服器，建立反向通道。',
+    why:'重建時大家通常只重建「被打進去的那一邊」。但通道有兩頭，另一頭在核心系統那裡，而核心常被當成受害者，沒有跟著重建。',
+    case:[['ok','8 月的路徑經過共享叢集連回核心的私有網路，官方表示已切斷這條路徑。'],['no','未證實：8 月時有暗網賣家宣稱握有仍可使用的 WireGuard 連線，官方只確認攻擊者是從叢集取得 VPN 存取。']],
+    clean:['核心端的 VPN peer、防火牆規則全部清空，依白名單重新建立。','換掉 VPN 的金鑰，不沿用任何舊設定。','出站流量也要管：只允許連到已知目的地（egress allowlist），反向通道就連不出去。']
+  },
+  {
+    nm:'供應鏈',
+    hide:'在 base image、部署腳本或 CI workflow 裡加幾行；或偷走 GitHub token、CI secrets，之後隨時能改程式碼、觸發部署。',
+    why:'後門會跟著每一次正常部署被重新裝回去。你把機器全部重建了，部署流程又親手把它放回來。',
+    case:[['no','未證實：8 月的暗網賣家宣稱握有 GitHub PAT 與原始碼；官方表示現有證據無法佐證整批資料外洩的說法。']],
+    clean:['從可信的 commit 重建映像檔，並簽章驗證。','輪替所有 CI/CD secrets、deploy key 與個人存取權杖。','檢查 workflow 檔案與分支保護設定的變更歷史。']
+  },
+  {
+    nm:'身分與工作階段',
+    hide:'偷走登入用的簽章金鑰，自己簽一張有效的登入憑證；保留還沒撤銷的平台 API token；在管理員帳號上加一個 MFA 裝置或授權的 OAuth app；或直接控制員工電腦。',
+    why:'這些都不是「入侵」，而是「合法登入」。在系統眼裡，攻擊者就是一個正常使用者。',
+    case:[['ok','10 月官方輪替了工作階段簽章金鑰，所有用戶都必須重新登入。'],['ok','8 月報告提到已完成相關員工裝置與開發環境的安全自查。'],['no','未證實：外界有管理者電腦遭駭的說法，官方沒有證實。']],
+    clean:['輪替所有簽章金鑰，撤銷全部 session 和 token。','檢查每個管理員帳號綁定的 MFA 裝置、OAuth app 和登入紀錄。','員工裝置用 EDR 檢查；只要有疑慮，就直接重灌。']
+  }
+];
+
+const ACTIONS = [
+  {id:'c1', nm:'修補已知的入侵路徑', sub:'修好入口、輪替已知外洩的憑證', cleans:[]},
+  {id:'c2', nm:'用新帳號、新叢集重建，舊環境整個廢棄', sub:'從可信程式碼重新部署', cleans:[1,2,3]},
+  {id:'c3', nm:'清查雲端帳號的身分與權限', sub:'CloudTrail 回滾、找出對外信任的 Role', cleans:[1]},
+  {id:'c4', nm:'比對叢集狀態與 Git 宣告', sub:'不在 repo 裡的 RBAC、CronJob、Webhook 全刪', cleans:[2]},
+  {id:'c5', nm:'清查主機的 SSH 金鑰與排程', sub:'不認得的金鑰與服務一律移除', cleans:[3]},
+  {id:'c6', nm:'核心端的 VPN 與防火牆依白名單重建', sub:'換掉 VPN 金鑰，管住出站流量', cleans:[4]},
+  {id:'c7', nm:'重建映像檔並輪替 CI/CD 憑證', sub:'GitHub token、deploy key、CI secrets', cleans:[5]},
+  {id:'c8', nm:'輪替簽章金鑰並檢查管理員帳號', sub:'撤銷所有 session、檢查 MFA 裝置與員工電腦', cleans:[6]}
+];
+
+const QUIZ = [
+  {q:'8 月事件後，官方寫「已移除已識別的異常叢集授權」。這句話為什麼值得注意？', o:['因為移除的速度太慢','因為沒被識別出來的，就不會被移除','因為異常授權不應該被移除','因為官方其實沒有做'], a:1,
+   e:'清除只能處理你找得到的東西。這就是為什麼高權限淪陷後，比較穩的做法是重建，而不是逐項清理。'},
+  {q:'10 月官方要求刪除名為 zeabur-pentest 的 SSH 金鑰，這個名字的危險在哪裡？', o:['名字太長，容易打錯','看起來像內部測試用的，容易被當成自己人留下的','它是用 Zeabur 官方工具產生的','只有付費用戶才看得到'], a:1,
+   e:'把後門偽裝成合法用途，是攻擊者延長潛伏時間的常見手法。看到不認得的東西時，「應該是同事放的」是最危險的假設。'},
+  {q:'雲端帳號和叢集都重建了，哪裡最容易被漏掉？', o:['新叢集的節點數量','核心系統那一端的 VPN peer 與防火牆規則','用戶的前端網站','DNS 的 TTL 設定'], a:1,
+   e:'通道有兩頭。重建了被打進去的那一邊，另一頭若還留著舊的 peer 或規則，門就還開著。'},
+  {q:'為什麼事件應變要先做鑑識，再做清除？', o:['因為法規規定一定要這個順序','不知道攻擊者做過什麼，就不知道要清哪裡；先清還會毀掉證據','因為鑑識比較便宜','因為清除需要先關機'], a:1,
+   e:'攻擊者的每一個動作，都是一個可能的藏身處。先把時間軸和動作清單還原出來，清除才有依據。'}
+];
+
+const state = {idx:0, checked:{}, answers:{}};
+try{
+  const saved = JSON.parse(localStorage.getItem('lateral-line-02')||'null');
+  if(saved && typeof saved.idx==='number'){Object.assign(state, saved)}
+}catch(e){}
+function save(){try{localStorage.setItem('lateral-line-02', JSON.stringify(state))}catch(e){}}
+
+/* ---------- rail ---------- */
+const routeEl = document.getElementById('route');
+routeEl.innerHTML = NODES.map(n=>`<li class="st" data-st="${n.id}"><span class="dot"></span><span class="nm">${n.nm}</span></li>`).join('');
+
+function cleanedSet(){
+  const s = new Set();
+  ACTIONS.forEach(a=>{ if(state.checked[a.id]) a.cleans.forEach(c=>s.add(c)) });
+  return s;
+}
+function gameStates(){
+  const c = cleanedSet(), st = {0:'clean'};
+  for(let i=1;i<=6;i++) st[i] = c.has(i)?'clean':'dirty';
+  st[7] = c.size===6 ? 'clean' : 'dirty';
+  return st;
+}
+function paint(st, focus){
+  const lis = [...routeEl.children];
+  lis.forEach((li,i)=>{
+    li.className='st';
+    const s = st[i];
+    if(s) li.classList.add(s==='here'?'here2':s);
+    if(s==='dirty'||s==='here') li.classList.add('r');
+    if(s==='clean' && i>0) li.classList.add('g');
+    const nx = st[i+1];
+    if(nx==='dirty'||nx==='here') li.classList.add('ar');
+    else if(nx==='clean') li.classList.add('ag');
+  });
+  const t = focus!=null ? lis[focus] : null;
+  if(t && window.matchMedia('(max-width:860px)').matches){
+    t.scrollIntoView({inline:'center',block:'nearest',behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'auto':'smooth'});
+  }
+}
+
+const TAGNAME = {ok:'官方確認', no:'未證實', gen:'未提及'};
+function spotScreen(i){
+  const S = SPOTS[i], n=i+1;
+  return {
+    states:()=>{const st={0:'clean'}; for(let k=1;k<n;k++) st[k]='dirty'; st[n]='here'; return st},
+    focus:n,
+    html:()=>`
+      <p class="kicker">藏身處 ${n}，共 6 處</p>
+      <h2 class="t">${S.nm}</h2>
+      <h3>攻擊者可以怎麼藏</h3><p>${S.hide}</p>
+      <h3>為什麼難發現</h3><p>${S.why}</p>
+      ${S.note?`<div class="note">${S.note}</div>`:''}
+      <h3>跟 Zeabur 有什麼關係</h3>
+      <ul class="facts">${S.case.map(([k,t])=>`<li><span class="tag ${k}">${TAGNAME[k]}</span>${t}</li>`).join('')}</ul>
+      <h3>怎麼清</h3>
+      <ul class="def">${S.clean.map(t=>`<li><span class="who">平台</span>${t}</li>`).join('')}</ul>`
+  };
+}
+
+function gameResult(){
+  const c = cleanedSet();
+  const any = ACTIONS.some(a=>state.checked[a.id]);
+  const left = SPOTS.map((s,i)=>({nm:s.nm,i:i+1})).filter(x=>!c.has(x.i));
+  if(!any) return {ok:false, html:`<strong>還沒有任何清理動作</strong><p>六個地方都可能藏著後門。試著勾選你會做的事。</p>`};
+  if(c.size===0) return {ok:false, html:`<strong>入口修好了，但六個地方都沒清</strong><p>這是最常見的結案方式，也最容易被同一個人再進來一次。攻擊者如果早就留了後門，他回來時根本不需要走原本那條路。</p>`};
+  if(!left.length) return {ok:true, html:`<strong>六個藏身處都清過了</strong><p>這不保證百分之百乾淨，但攻擊者想回來，就得重新找一條新的路，而不是用他留下的鑰匙直接開門。</p>${state.checked.c1?'':'<p>別忘了，原本的入口也要修。不然他會從同一扇窗戶再爬進來一次。</p>'}`};
+  return {ok:false, html:`<strong>還有 ${left.length} 個地方沒清：${left.map(x=>x.nm).join('、')}</strong><p>只要其中一處藏著後門，攻擊者就能回來，而且不必再走一次第一課那七站。</p>${c.has(1)&&c.has(2)&&c.has(3)&&!c.has(4)?'<p>你重建了被打進去的那一邊，但通道的另一頭在核心系統，那裡還沒動。</p>':''}`};
+}
+
+const SCREENS = [
+  {
+    states:()=>({0:'clean'}), focus:0,
+    html:()=>`
+      <p class="kicker">Lateral Line 02：Zeabur</p>
+      <h1>門修好了<br>人還在嗎</h1>
+      <p class="lead">8 月事件後，Zeabur 切斷了攻擊路徑、輪替了內部憑證、停用 Legacy API Key，還汰換了共享叢集的主機。七週後，10 月 14 日，又被入侵了一次。</p>
+      <p>這一課看三件事：10 月到底發生了什麼、攻擊者可能把後門藏在哪裡，以及事件之後，怎麼確認真的把人趕出去。</p>
+      <p class="muted">10 月事件的完整報告官方還沒發布。內容裡會標清楚哪些是官方確認、哪些是未證實的說法、哪些是一般常見的攻擊手法。建議先走完 <a href="${LINE01}" target="_blank" rel="noopener">Lateral Line 01</a>。</p>`
+  },
+  {
+    states:()=>({0:'clean',7:'here'}), focus:7,
+    html:()=>`
+      <p class="kicker">已知的事</p>
+      <h2 class="t">10 月 14 日發生了什麼</h2>
+      <span class="time">台灣時間 10/14 晚上 9 點多到 10/15 凌晨 1 點</span>
+      <ul class="facts">
+        <li><span class="tag ok">官方確認</span>攻擊者取得共享叢集的平台管理憑證，進入用戶容器執行指令，讀取部分用戶的資料庫內容與環境變數。主要目標是 n8n、PostgreSQL、MySQL、Redis 與 AI 相關服務。</li>
+        <li><span class="tag ok">官方確認</span>狀態頁最初只說共享叢集上的資料庫被存取，幾小時後更正：部分 Google Cloud 專用伺服器也遭未授權存取，而且攻擊者有平台資料庫的讀取權。</li>
+        <li><span class="tag ok">官方確認</span>官方撤銷已識別的外洩憑證、輪替登入簽章金鑰、暫時限制 Google Cloud 專用伺服器的公開 SSH，並要求用戶移除不認得的 SSH 金鑰，特別是 zeabur-pentest。</li>
+        <li><span class="tag gen">尚未公布</span>平台管理憑證怎麼外洩、跟 8 月是否同一條路的延伸、影響多少用戶。</li>
+      </ul>
+      <h3>兩次事件比一比</h3>
+      <div class="tbl"><table class="cmp">
+        <thead><tr><th></th><th>8 月</th><th>10 月</th></tr></thead>
+        <tbody>
+          <tr><th>起點</th><td>用戶部署的 NextChat 漏洞</td><td>共享叢集的平台管理憑證</td></tr>
+          <tr><th>做法</th><td>繞一大圈，到核心資料庫讀秘密</td><td>直接進每個用戶的容器</td></tr>
+          <tr><th>拿走的</th><td>環境變數（鑰匙）</td><td>環境變數，加上資料庫內容（抽屜裡的東西）</td></tr>
+        </tbody>
+      </table></div>
+      <p>鑰匙換掉就失效了，但被讀走的資料收不回來。這是 10 月比 8 月更嚴重的地方。</p>`
+  },
+  {
+    states:()=>({0:'clean',7:'here'}), focus:7,
+    html:()=>`
+      <p class="kicker">三種可能</p>
+      <h2 class="t">明明修好了，為什麼又進來</h2>
+      <p>官方還沒公布原因。從資安事件應變的角度，「修補後又被入侵」通常是下面三種之一，也可能同時發生：</p>
+      <h3>一、後門沒清乾淨</h3>
+      <p>攻擊者在 8 月拿過 AWS root 和叢集管理員，有足夠的權限替自己留一扇門。修補只關上他來時的路，沒關上他自己開的門。</p>
+      <h3>二、有東西沒換到</h3>
+      <p>某一把憑證、某一個通道、某個舊系統裡的設定，在輪替清單之外。退場中的系統尤其容易被漏掉，因為大家默認它很快就會關掉。</p>
+      <h3>三、全新的外洩</h3>
+      <p>跟 8 月完全無關的新入口，例如人員的電腦、第三方服務或新的漏洞。</p>
+      <div class="note">10 月出現了一個線索：攻擊者在專用伺服器上留了一把偽裝成內部滲透測試用的 SSH 金鑰。這證明他這一次的確試圖留下回來的路，但無法證明 8 月就留過。</div>
+      <p>不管是哪一種，問題都一樣：<b>怎麼確定攻擊者沒有留下任何東西？</b>接下來六頁，會走過後門最常藏的六個地方。</p>`
+  },
+  ...SPOTS.map((_,i)=>spotScreen(i)),
+  {
+    states:()=>gameStates(), focus:null,
+    html:()=>`
+      <p class="kicker">換你清場</p>
+      <h2 class="t">清到哪裡，才算把人趕出去</h2>
+      <p>假設你是 8 月事件後的 Zeabur。勾選你會做的清理動作，左邊的地圖會顯示還有哪些地方可能藏著後門。只要還有一處是紅的，攻擊者就回得來。</p>
+      <ul class="checks">${ACTIONS.map(a=>`
+        <li><label><input type="checkbox" data-c="${a.id}" ${state.checked[a.id]?'checked':''}>
+        <span>${a.nm}<small>${a.sub}${a.cleans.length?`｜清掉：${a.cleans.map(c=>SPOTS[c-1].nm).join('、')}`:'｜不處理任何藏身處'}</small></span></label></li>`).join('')}
+      </ul>
+      <div class="result" id="result"></div>`,
+    after(){
+      const box=document.getElementById('result');
+      const up=()=>{const r=gameResult(); box.innerHTML=r.html; box.classList.toggle('ok',r.ok); paint(gameStates(), null)};
+      document.querySelectorAll('[data-c]').forEach(cb=>cb.addEventListener('change',()=>{state.checked[cb.dataset.c]=cb.checked; save(); up()}));
+      up();
+    }
+  },
+  {
+    states:()=>gameStates(), focus:null,
+    html:()=>`
+      <p class="kicker">把清場變成流程</p>
+      <h2 class="t">怎麼防止第二次被駭</h2>
+      <p>這一頁的順序有意義。前面幾項做錯順序，後面再怎麼努力也是白費。</p>
+      <ul class="layers">
+        <li><h4>先鑑識<span>再清除</span></h4><ul>
+          <li>用雲端稽核、K8s audit log、資料庫查詢紀錄，還原攻擊者完整的時間軸和每一個動作。</li>
+          <li>他建過、改過的每一樣東西，都是一個可能的藏身處。沒有這份清單，清除就只能用猜的。</li>
+          <li>先保留證據，再動手；必要時請第三方應變團隊和雲端供應商一起查。</li></ul></li>
+        <li><h4>假設全面淪陷<span>重建，不原地修</span></h4><ul>
+          <li>拿過最高權限的環境，無法證明是乾淨的。開新帳號、新叢集、新主機，從可信的程式碼重新部署。</li>
+          <li>舊環境整個廢棄，不要「一邊修一邊用」。</li></ul></li>
+        <li><h4>通道兩頭都換<span>包括核心那一端</span></h4><ul>
+          <li>VPN peer、防火牆、私有連線，在核心端依白名單全部重建。</li>
+          <li>出站流量也要限制，讓反向通道連不出去。</li></ul></li>
+        <li><h4>全面輪替<span>先盤點，再撤銷</span></h4><ul>
+          <li>先列出所有憑證，再逐一「撤銷舊的、產生新的」，只新增不撤銷等於沒換。</li>
+          <li>別漏了登入簽章金鑰、CI/CD secrets、deploy key、員工的個人存取權杖。</li></ul></li>
+        <li><h4>讓後門住不下來<span>長期的設計</span></h4><ul>
+          <li>短期憑證：後門金鑰就算留下來，也會自己過期。</li>
+          <li>GitOps 與不可變基礎設施：不在 Git 裡的東西會被自動還原或告警。</li></ul></li>
+        <li><h4>等他回來<span>偵測再次入侵</span></h4><ul>
+          <li>在舊位置放誘餌憑證（honeytoken），只要有人使用就告警。</li>
+          <li>新增 IAM 身分、RBAC 綁定、SSH 金鑰、VPN peer，全部即時通知。</li>
+          <li>退場中的系統不要等，能關就立刻關。兩次事件都從退場中的共享叢集開始。</li></ul></li>
+      </ul>`
+  },
+  {
+    states:()=>gameStates(), focus:null,
+    html:()=>{
+      const done = QUIZ.filter((_,i)=>state.answers[i]!==undefined).length;
+      const score = QUIZ.filter((q,i)=>state.answers[i]===q.a).length;
+      return `
+      <p class="kicker">四題小測驗</p>
+      <h2 class="t">確認一下你記得多少</h2>
+      ${QUIZ.map((q,i)=>{
+        const ans=state.answers[i];
+        return `<div class="q"><h3>${i+1}. ${q.q}</h3><div class="opts">${q.o.map((o,j)=>{
+          let cls='opt'; if(ans!==undefined){ if(j===q.a) cls+=' right'; else if(j===ans) cls+=' wrong'; }
+          return `<button class="${cls}" data-q="${i}" data-o="${j}" ${ans!==undefined?'disabled':''}>${o}</button>`;
+        }).join('')}</div>${ans!==undefined?`<p class="explain">${ans===q.a?'答對了。':'不是這個。'}${q.e}</p>`:''}</div>`;
+      }).join('')}
+      ${done===QUIZ.length?`<p class="score">答對 ${score} / ${QUIZ.length} 題</p><button class="btn" id="retry">重新作答</button>`:''}`;
+    },
+    after(){
+      document.querySelectorAll('.opt').forEach(b=>b.addEventListener('click',()=>{
+        state.answers[b.dataset.q]=+b.dataset.o; save(); render(false);
+        const el=document.querySelector(`[data-q="${b.dataset.q}"]`); if(el) el.closest('.q').scrollIntoView({block:'nearest'});
+      }));
+      const r=document.getElementById('retry'); if(r) r.addEventListener('click',()=>{state.answers={}; save(); render()});
+    }
+  },
+  {
+    states:()=>gameStates(), focus:null,
+    html:()=>`
+      <p class="kicker">走完全程</p>
+      <h2 class="t">三件值得帶走的事</h2>
+      <ol class="takeaways">
+        <li>事件結束的標準不是「入口修好了」，而是「攻擊者留下的東西都找到了」。這兩件事中間，差的是一份完整的鑑識。</li>
+        <li>原地修補很難證明乾淨。從可信來源重建，讓後門沒有地方住；而且通道的兩頭都要重建。</li>
+        <li>長期的解法是讓後門住不下來：短期憑證會自己過期，GitOps 會把多出來的東西還原。</li>
+      </ol>
+      <p class="muted">10 月是三種可能中的哪一種，要等官方完整報告公布才知道。報告出來後，這一課會再更新。</p>
+      <h3>資料來源</h3>
+      <ul class="src">
+        <li><a href="https://status.zeabur.com/incident/1091243" target="_blank" rel="noopener">Zeabur 狀態頁：Unauthorized Access to Zeabur Infrastructure and User Data（10 月）</a></li>
+        <li><a href="https://zeabur.com/blogs/zeabur-is-shutting-down" target="_blank" rel="noopener">Zeabur is shutting down: what happens next（停運公告）</a></li>
+        <li><a href="https://zeabur.com/zh-TW/blogs/august-2026-security-incident" target="_blank" rel="noopener">Zeabur 2026 年八月資安事件（官方完整報告）</a></li>
+        <li><a href="https://foreverwebs.com/blog/zeabur-second-security-incident-shutdown-analysis" target="_blank" rel="noopener">恆遠數位：第二次資安事件與停運拆解</a></li>
+        <li><a href="https://lonelysec.com/zeabur-security-incident-ai-token-leak/" target="_blank" rel="noopener">孤獨資安：暗網宣稱的查核整理</a></li>
+      </ul>
+      <p><a href="${LINE01}" target="_blank" rel="noopener">回到 Lateral Line 01：Zeabur</a></p>
+      <button class="btn inline-btn" id="restart">從頭再走一次</button>`,
+    after(){document.getElementById('restart').addEventListener('click',()=>{state.idx=0; save(); render()})}
+  }
+];
+
+/* ---------- navigation ---------- */
+const screenEl=document.getElementById('screen');
+const prevBtn=document.getElementById('prev'), nextBtn=document.getElementById('next');
+const dotsEl=document.getElementById('dots');
+if(state.idx<0||state.idx>=SCREENS.length) state.idx=0;
+
+function render(resetScroll=true){
+  const s=SCREENS[state.idx];
+  screenEl.innerHTML=s.html();
+  paint(s.states(), s.focus);
+  if(s.after) s.after();
+  prevBtn.disabled=state.idx===0;
+  nextBtn.textContent=state.idx===0?'開始':state.idx===SCREENS.length-1?'回到起點':'下一步';
+  dotsEl.innerHTML=SCREENS.map((_,i)=>`<span class="${i<state.idx?'done':i===state.idx?'now':''}"></span>`).join('');
+  if(resetScroll){window.scrollTo(0,0); screenEl.focus({preventScroll:true})}
+}
+function go(d){
+  state.idx = d>0&&state.idx===SCREENS.length-1 ? 0 : Math.max(0,Math.min(SCREENS.length-1,state.idx+d));
+  save(); render();
+}
+prevBtn.addEventListener('click',()=>go(-1));
+nextBtn.addEventListener('click',()=>go(1));
+document.addEventListener('keydown',e=>{
+  if(e.target.matches('input,button,a')) return;
+  if(e.key==='ArrowRight') go(1);
+  if(e.key==='ArrowLeft') go(-1);
+});
+render();
+</script>
+</body>
+</html>
